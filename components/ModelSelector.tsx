@@ -11,9 +11,21 @@ interface ModelSelectorProps {
 
 const AVAILABLE_MODELS = [
   {
-    id: 'llama-3.1-70b-versatile',
-    name: 'Groq (Llama 3.1 70B)',
-    description: 'Our most intelligent model - Fast and versatile',
+    id: 'llama-3.1-8b-instant',
+    name: 'Groq (Llama 3.1 8B)',
+    description: 'Fast and efficient model - Best for quick responses',
+    available: true,
+  },
+  {
+    id: 'llama-3.3-70b-versatile',
+    name: 'Groq (Llama 3.3 70B)',
+    description: 'Most intelligent model - Advanced reasoning and capabilities',
+    available: true,
+  },
+  {
+    id: 'mixtral-8x7b-32768',
+    name: 'Groq (Mixtral 8x7B)',
+    description: 'High-quality model with extended context window',
     available: true,
   },
 ]

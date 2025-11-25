@@ -58,7 +58,7 @@ export default function AIChatMain({
   }
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading || !chat) return
+    if (!input.trim() || isLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -67,24 +67,44 @@ export default function AIChatMain({
       timestamp: new Date(),
     }
 
-    const updatedMessages = [...chat.messages, userMessage]
-    const updatedChat: Chat = {
-      ...chat,
-      messages: updatedMessages,
-      title: chat.title === 'New Chat' ? input.trim().slice(0, 50) : chat.title,
-      updatedAt: new Date(),
+    let updatedChat: Chat
+    if (!chat) {
+      // Create new chat if none exists
+      updatedChat = {
+        id: Date.now().toString(),
+        title: input.trim().slice(0, 50),
+        messages: [userMessage],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        model: selectedModel,
+      }
+      // Notify parent to create chat
+      onChatUpdate(updatedChat)
+    } else {
+      const updatedMessages = [...chat.messages, userMessage]
+      updatedChat = {
+        ...chat,
+        messages: updatedMessages,
+        title: chat.title === 'New Chat' ? input.trim().slice(0, 50) : chat.title,
+        updatedAt: new Date(),
+      }
+      onChatUpdate(updatedChat)
     }
 
-    onChatUpdate(updatedChat)
     setInput('')
     setIsLoading(true)
 
     try {
+      const messagesToSend = updatedChat.messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }))
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: updatedMessages.map((msg) => ({
+          messages: messagesToSend.map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
@@ -92,9 +112,16 @@ export default function AIChatMain({
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to get response')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to get response`)
+      }
 
       const data = await response.json()
+      
+      if (!data.message) {
+        throw new Error(data.error || 'Empty response from AI')
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -105,7 +132,7 @@ export default function AIChatMain({
 
       const finalChat: Chat = {
         ...updatedChat,
-        messages: [...updatedMessages, assistantMessage],
+        messages: [...updatedChat.messages, assistantMessage],
         updatedAt: new Date(),
       }
 
@@ -120,7 +147,7 @@ export default function AIChatMain({
       }
       const finalChat: Chat = {
         ...updatedChat,
-        messages: [...updatedMessages, errorMessage],
+        messages: [...updatedChat.messages, errorMessage],
         updatedAt: new Date(),
       }
       onChatUpdate(finalChat)
@@ -156,29 +183,74 @@ export default function AIChatMain({
 
   if (!chat) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <Bot className="w-16 h-16 text-coral-red/30 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-coral-red-light mb-2">
-            How can I help you today?
-          </h2>
-          <p className="text-coral-red/70 mb-6">
-            Start a new conversation or select an existing chat from the sidebar.
-          </p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={onModelSelectorToggle}
-              className="px-4 py-2 glass-strong rounded-lg text-coral-red hover:border-coral-red border-2 border-transparent transition-all"
-            >
-              Select Model
-            </button>
-            <button
-              onClick={() => setShowGroupChatDialog(true)}
-              className="px-4 py-2 glass-strong rounded-lg text-coral-red hover:border-coral-red border-2 border-transparent transition-all flex items-center gap-2"
-            >
-              <Users className="w-4 h-4" />
-              Create Group Chat
-            </button>
+      <div className="flex-1 flex flex-col relative">
+        {/* Top Bar */}
+        <div className="p-4 border-b border-coral-red/20 flex items-center justify-between glass-strong rounded-t-3xl">
+          <button
+            onClick={onModelSelectorToggle}
+            className="px-4 py-2 glass rounded-2xl hover:glass-strong transition-all text-sm text-coral-red flex items-center gap-2 border-2 border-transparent hover:border-coral-red/30"
+          >
+            <span className="font-medium">ChatGPT</span>
+            <span className="text-xs text-coral-red/70">
+              {selectedModel === 'llama-3.1-70b-versatile' ? 'Groq (Llama 3.1 70B)' : selectedModel}
+            </span>
+          </button>
+          <button
+            onClick={() => setShowGroupChatDialog(true)}
+            className="px-4 py-2 glass rounded-2xl hover:glass-strong transition-all text-sm text-coral-red flex items-center gap-2 border-2 border-transparent hover:border-coral-red/30"
+            title="Create Group Chat"
+          >
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Create Group Chat</span>
+          </button>
+        </div>
+
+        {/* Center Search Bar */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-3xl">
+            <h2 className="text-3xl font-bold text-coral-red-light mb-8 text-center">
+              How can I help you today?
+            </h2>
+            <div className="relative">
+              <div className="relative glass-strong rounded-3xl border-2 border-coral-red/30 focus-within:border-coral-red/60 transition-all shadow-lg">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSend()
+                    }
+                  }}
+                  placeholder="Ask a question"
+                  className="w-full px-16 py-5 bg-transparent rounded-3xl text-coral-red placeholder-coral-red/60 focus:outline-none resize-none max-h-40 overflow-y-auto text-base"
+                  rows={1}
+                />
+                <button className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 hover:glass rounded-full transition-all">
+                  <Plus className="w-6 h-6 text-coral-red/70 hover:text-coral-red" />
+                </button>
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  <button className="p-2 hover:glass rounded-full transition-all">
+                    <Mic className="w-5 h-5 text-coral-red/70 hover:text-coral-red" />
+                  </button>
+                  <button className="p-2 hover:glass rounded-full transition-all">
+                    <svg className="w-5 h-5 text-coral-red/70 hover:text-coral-red" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    className="p-2 glass-strong rounded-full text-coral-red-light hover:border-coral-red border-2 border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send className="w-5 h-5" />
+                  </motion.button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -186,24 +258,26 @@ export default function AIChatMain({
   }
 
   return (
-    <div className="flex-1 flex flex-col relative">
+    <div className="flex-1 flex flex-col relative rounded-3xl overflow-hidden glass-strong border-2 border-coral-red/20">
       {/* Header */}
-      <div className="p-4 border-b border-coral-red/20 flex items-center justify-between glass-strong">
+      <div className="p-5 border-b border-coral-red/20 flex items-center justify-between glass-strong rounded-t-3xl">
         <div className="flex items-center gap-3">
           <button
             onClick={onModelSelectorToggle}
-            className="px-3 py-1.5 glass rounded-lg hover:glass-strong transition-all text-sm text-coral-red flex items-center gap-2"
+            className="px-4 py-2.5 glass rounded-2xl hover:glass-strong transition-all text-sm text-coral-red flex items-center gap-2 border-2 border-transparent hover:border-coral-red/30"
           >
                     <span className="font-medium">ChatGPT</span>
                     <span className="text-xs text-coral-red/70">
-                      {selectedModel === 'llama-3.1-70b-versatile' ? 'Groq (Llama 3.1 70B)' : selectedModel}
+                      {selectedModel === 'llama-3.1-8b-instant' ? 'Groq (Llama 3.1 8B)' : 
+                       selectedModel === 'llama-3.3-70b-versatile' ? 'Groq (Llama 3.3 70B)' :
+                       selectedModel === 'mixtral-8x7b-32768' ? 'Groq (Mixtral 8x7B)' : selectedModel}
                     </span>
           </button>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowGroupChatDialog(true)}
-            className="p-2 glass rounded-lg hover:glass-strong transition-all"
+            className="p-3 glass rounded-2xl hover:glass-strong transition-all border-2 border-transparent hover:border-coral-red/30"
             title="Create Group Chat"
           >
             <Users className="w-5 h-5 text-coral-red" />
@@ -212,7 +286,7 @@ export default function AIChatMain({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-8 space-y-6">
         <AnimatePresence>
           {chat.messages.map((message) => (
             <motion.div
@@ -224,15 +298,15 @@ export default function AIChatMain({
               }`}
             >
               {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full glass flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-5 h-5 text-coral-red" />
+                <div className="w-10 h-10 rounded-full glass flex items-center justify-center flex-shrink-0 border-2 border-coral-red/20">
+                  <Bot className="w-6 h-6 text-coral-red" />
                 </div>
               )}
               <div
-                className={`max-w-[75%] glass-strong p-4 rounded-2xl ${
+                className={`max-w-[75%] glass-strong p-5 rounded-3xl ${
                   message.role === 'user'
-                    ? 'bg-coral-red/20 border-coral-red/30'
-                    : ''
+                    ? 'bg-coral-red/20 border-2 border-coral-red/30'
+                    : 'border-2 border-coral-red/20'
                 }`}
               >
                 <p className="text-coral-red/90 leading-relaxed whitespace-pre-wrap">
@@ -246,8 +320,8 @@ export default function AIChatMain({
                 </p>
               </div>
               {message.role === 'user' && (
-                <div className="w-8 h-8 rounded-full glass flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-coral-red" />
+                <div className="w-10 h-10 rounded-full glass flex items-center justify-center flex-shrink-0 border-2 border-coral-red/20">
+                  <User className="w-6 h-6 text-coral-red" />
                 </div>
               )}
             </motion.div>
@@ -259,10 +333,10 @@ export default function AIChatMain({
             animate={{ opacity: 1 }}
             className="flex gap-4"
           >
-            <div className="w-8 h-8 rounded-full glass flex items-center justify-center">
-              <Bot className="w-5 h-5 text-coral-red" />
+            <div className="w-10 h-10 rounded-full glass flex items-center justify-center border-2 border-coral-red/20">
+              <Bot className="w-6 h-6 text-coral-red" />
             </div>
-            <div className="glass-strong p-4 rounded-2xl">
+            <div className="glass-strong p-5 rounded-3xl border-2 border-coral-red/20">
               <div className="flex gap-2">
                 <div className="w-2 h-2 bg-coral-red rounded-full animate-bounce" />
                 <div
@@ -281,34 +355,36 @@ export default function AIChatMain({
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-coral-red/20 glass-strong">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex gap-3 items-end">
+      <div className="p-6 border-t border-coral-red/20 glass-strong">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex gap-4 items-end">
             <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Send a message or @ChatGPT"
-                className="w-full px-4 py-3 glass rounded-lg text-coral-red placeholder-coral-red/50 focus:outline-none focus:border-coral-red border-2 border-transparent transition-all resize-none max-h-32 overflow-y-auto"
-                rows={1}
-              />
-              <button className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 hover:glass-strong rounded transition-all">
-                <Plus className="w-4 h-4 text-coral-red/50" />
-              </button>
+              <div className="relative glass-strong rounded-3xl border-2 border-coral-red/30 focus-within:border-coral-red/60 transition-all shadow-lg">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Send a message or @ChatGPT"
+                  className="w-full px-6 py-4 bg-transparent rounded-3xl text-coral-red placeholder-coral-red/60 focus:outline-none resize-none max-h-40 overflow-y-auto text-base"
+                  rows={1}
+                />
+                <button className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 hover:glass rounded-full transition-all">
+                  <Plus className="w-5 h-5 text-coral-red/70 hover:text-coral-red" />
+                </button>
+              </div>
             </div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="p-3 glass-strong rounded-lg text-coral-red-light hover:border-coral-red border-2 border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-4 glass-strong rounded-3xl text-coral-red-light hover:border-coral-red border-2 border-coral-red/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-6 h-6" />
             </motion.button>
           </div>
-          <p className="text-xs text-coral-red/50 mt-2 text-center">
+          <p className="text-xs text-coral-red/50 mt-3 text-center">
             ChatGPT can make mistakes. Check important info.
           </p>
         </div>

@@ -30,10 +30,16 @@ export default function Home() {
         setActiveSection={setActiveSection} 
       />
       
+      {/* Spacing per desktop navigation */}
+      <div className="hidden md:block h-20" />
+      
       <Hero />
       <Services />
       <Team />
       <Clients />
+      
+      {/* Spacing per mobile navigation bottom */}
+      <div className="md:hidden h-20" />
     </main>
   )
 }

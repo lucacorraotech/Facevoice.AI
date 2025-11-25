@@ -42,6 +42,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer utilities {
@@ -109,6 +110,10 @@ body {
 
   .liquid-glass-blob svg {
     filter: drop-shadow(0 8px 32px rgba(0, 191, 255, 0.1));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 

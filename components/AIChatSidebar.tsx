@@ -13,6 +13,7 @@ import {
   Plus,
   X,
   Menu,
+  LogOut,
 } from 'lucide-react'
 import { Chat, Project } from '@/app/ai-chat/page'
 
@@ -27,8 +28,10 @@ interface AIChatSidebarProps {
   onSelectChat: (chat: Chat) => void
   onDeleteChat: (chatId: string) => void
   onCreateProject: (name: string, color: string) => void
+  onDeleteProject: (projectId: string) => void
   onAddChatToProject: (chatId: string, projectId: string) => void
   onSearchChange: (query: string) => void
+  onLogout: () => void
 }
 
 const PROJECT_COLORS = [
@@ -50,8 +53,10 @@ export default function AIChatSidebar({
   onSelectChat,
   onDeleteChat,
   onCreateProject,
+  onDeleteProject,
   onAddChatToProject,
   onSearchChange,
+  onLogout,
 }: AIChatSidebarProps) {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
   const [showNewProject, setShowNewProject] = useState(false)
@@ -93,20 +98,20 @@ export default function AIChatSidebar({
     <motion.div
       initial={{ x: -300 }}
       animate={{ x: 0 }}
-      className="w-64 glass-strong border-r border-coral-red/20 flex flex-col h-full"
+      className="w-64 glass-strong border-r border-coral-red/20 flex flex-col h-full rounded-r-3xl"
     >
       {/* Header */}
       <div className="p-4 border-b border-coral-red/20 flex items-center justify-between">
         <button
           onClick={onNewChat}
-          className="flex items-center gap-2 px-3 py-2 glass rounded-lg hover:glass-strong transition-all w-full"
+          className="flex items-center gap-2 px-4 py-3 glass rounded-2xl hover:glass-strong transition-all w-full border-2 border-transparent hover:border-coral-red/30"
         >
           <MessageSquare className="w-4 h-4 text-coral-red" />
           <span className="text-sm text-coral-red font-medium">New Chat</span>
         </button>
         <button
           onClick={onToggleSidebar}
-          className="p-2 glass rounded-lg hover:glass-strong transition-all ml-2"
+          className="p-2 glass rounded-2xl hover:glass-strong transition-all ml-2 border-2 border-transparent hover:border-coral-red/30"
         >
           <X className="w-4 h-4 text-coral-red" />
         </button>
@@ -121,21 +126,21 @@ export default function AIChatSidebar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search chats"
-            className="w-full pl-9 pr-3 py-2 glass rounded-lg text-sm text-coral-red placeholder-coral-red/50 focus:outline-none focus:border-coral-red border-2 border-transparent transition-all"
+            className="w-full pl-10 pr-4 py-3 glass-strong rounded-2xl text-sm text-coral-red placeholder-coral-red/60 focus:outline-none focus:border-coral-red border-2 border-coral-red/30 transition-all"
           />
         </div>
       </div>
 
       {/* Navigation */}
       <div className="p-4 border-b border-coral-red/20 space-y-2">
-        <button className="flex items-center gap-2 w-full px-2 py-2 text-sm text-coral-red/70 hover:text-coral-red transition-colors">
-          <Search className="w-4 h-4" />
-          <span>Search Chat</span>
-        </button>
-        <button className="flex items-center gap-2 w-full px-2 py-2 text-sm text-coral-red/70 hover:text-coral-red transition-colors">
-          <BookOpen className="w-4 h-4" />
-          <span>Library</span>
-        </button>
+            <button className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-coral-red/70 hover:text-coral-red transition-colors rounded-2xl hover:glass">
+              <Search className="w-4 h-4" />
+              <span>Search Chat</span>
+            </button>
+            <button className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-coral-red/70 hover:text-coral-red transition-colors rounded-2xl hover:glass">
+              <BookOpen className="w-4 h-4" />
+              <span>Library</span>
+            </button>
       </div>
 
       {/* GPT Section */}
@@ -216,22 +221,36 @@ export default function AIChatSidebar({
 
         <div className="space-y-1">
           {projects.map((project) => (
-            <div key={project.id}>
-              <button
-                onClick={() => toggleProject(project.id)}
-                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-coral-red/70 hover:text-coral-red transition-colors"
-              >
-                {expandedProjects.has(project.id) ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-                <div
-                  className="w-4 h-4 rounded"
-                  style={{ backgroundColor: project.color }}
-                />
-                <span className="flex-1 text-left truncate">{project.name}</span>
-              </button>
+            <div key={project.id} className="group">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleProject(project.id)}
+                  className="flex items-center gap-2 flex-1 px-2 py-1.5 text-sm text-coral-red/70 hover:text-coral-red transition-colors"
+                >
+                  {expandedProjects.has(project.id) ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: project.color }}
+                  />
+                  <span className="flex-1 text-left truncate">{project.name}</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`Sei sicuro di voler eliminare il progetto "${project.name}"?`)) {
+                      onDeleteProject(project.id)
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:glass-strong rounded transition-all"
+                  title="Elimina progetto"
+                >
+                  <Trash2 className="w-3 h-3 text-coral-red/50 hover:text-coral-red" />
+                </button>
+              </div>
               <AnimatePresence>
                 {expandedProjects.has(project.id) && (
                   <motion.div
@@ -294,6 +313,17 @@ export default function AIChatSidebar({
             </p>
           )}
         </div>
+      </div>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-coral-red/20">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-coral-red/70 hover:text-coral-red transition-colors rounded-2xl hover:glass"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </button>
       </div>
     </motion.div>
   )
