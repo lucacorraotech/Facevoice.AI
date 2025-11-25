@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || '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',
+  apiKey: process.env.GROQ_API_KEY || '',
 })
 
 // Groq model mapping - Updated with currently available models

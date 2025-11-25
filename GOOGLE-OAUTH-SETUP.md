@@ -2,8 +2,10 @@
 
 ## 📋 Credenziali Google OAuth
 
-- **Client ID:** `304606049306-jvo13imhs2ur2gnn5c67ljt77lt9qnqr.apps.googleusercontent.com`
-- **Client Secret:** `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`
+⚠️ **IMPORTANTE:** Le credenziali devono essere configurate nelle variabili d'ambiente o nel dashboard Supabase. Non committare mai le credenziali nel repository!
+
+- **Client ID:** Configura nel dashboard Supabase o come variabile d'ambiente
+- **Client Secret:** Configura nel dashboard Supabase o come variabile d'ambiente
 - **Callback URL:** `https://anbkdvcnewocappmsbnc.supabase.co/auth/v1/callback`
 
 ## 🚀 Passi per Configurare Google OAuth in Supabase
@@ -18,9 +20,9 @@ Vai su [Supabase Dashboard](https://supabase.com/dashboard/project/anbkdvcnewoca
 2. Trova **Google** nella lista dei provider
 3. Clicca su **Google** per aprire le impostazioni
 4. Abilita il provider Google spuntando **"Enable Google provider"**
-5. Inserisci le credenziali:
-   - **Client ID (for OAuth):** `304606049306-jvo13imhs2ur2gnn5c67ljt77lt9qnqr.apps.googleusercontent.com`
-   - **Client Secret (for OAuth):** `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`
+5. Inserisci le credenziali (ottieni le tue credenziali da Google Cloud Console):
+   - **Client ID (for OAuth):** [Inserisci il tuo Client ID]
+   - **Client Secret (for OAuth):** [Inserisci il tuo Client Secret]
 6. Clicca su **Save**
 
 ### 3. Verifica le Redirect URLs
