@@ -13,10 +13,16 @@
 Crea un file `.env.local` nella root del progetto con:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://anbkdvcnewocappmsbnc.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuYmtkdmNuZXdvY2FwcG1zYm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3Nzg5ODUsImV4cCI6MjA3OTM1NDk4NX0.meq2mqYUO9ZJ4GpBjBcAeB_E2d4_HVlL_ABE_PjAmNQ
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuYmtkdmNuZXdvY2FwcG1zYm5jIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mzc3ODk4NSwiZXhwIjoyMDc5MzU0OTg1fQ.h7FqnJ6C-znS7O1VOvrP8MWxHV3l-u8py0kHueDGiVY
+NEXT_PUBLIC_SUPABASE_URL=https://tuo-progetto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=la_tua_anon_key_qui
+SUPABASE_SERVICE_ROLE_KEY=la_tua_service_role_key_qui
+GROQ_API_KEY=la_tua_groq_api_key_qui
 ```
+
+**⚠️ IMPORTANTE:** 
+- Ottieni le tue chiavi dal [Supabase Dashboard](https://supabase.com/dashboard)
+- Per GROQ_API_KEY, ottienila da [Groq Console](https://console.groq.com)
+- **NON committare mai questo file con le chiavi reali!**
 
 **Nota:** Il file `.env.local` è già nel `.gitignore`, quindi le tue credenziali sono al sicuro.
 

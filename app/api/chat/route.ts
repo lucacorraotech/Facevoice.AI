@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
+import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions'
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || '',
@@ -28,12 +29,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate messages format
-    const validMessages = messages
+    const validMessages: ChatCompletionMessageParam[] = messages
       .filter((msg: any) => msg && msg.role && msg.content)
-      .map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' : msg.role === 'assistant' ? 'assistant' : 'system',
-        content: String(msg.content).trim(),
-      }))
+      .map((msg: any): ChatCompletionMessageParam => {
+        const role = msg.role === 'user' ? 'user' as const : msg.role === 'assistant' ? 'assistant' as const : 'system' as const
+        return {
+          role,
+          content: String(msg.content).trim(),
+        } as ChatCompletionMessageParam
+      })
 
     if (validMessages.length === 0) {
       return NextResponse.json(
@@ -50,13 +54,13 @@ export async function POST(req: NextRequest) {
       day: 'numeric',
     })
 
-    const systemMessage = {
-      role: 'system' as const,
+    const systemMessage: ChatCompletionMessageParam = {
+      role: 'system',
       content: `You are a helpful AI assistant. Today's date is ${currentDate}. Always provide accurate and up-to-date information based on the current date.`,
     }
 
     // Prepend system message if the first message is not already a system message
-    const messagesWithSystem = validMessages[0]?.role === 'system'
+    const messagesWithSystem: ChatCompletionMessageParam[] = validMessages[0]?.role === 'system'
       ? validMessages
       : [systemMessage, ...validMessages]
 
@@ -140,17 +144,20 @@ export async function POST(req: NextRequest) {
           month: 'long',
           day: 'numeric',
         })
-        const systemMessage = {
-          role: 'system' as const,
+        const systemMessage: ChatCompletionMessageParam = {
+          role: 'system',
           content: `You are a helpful AI assistant. Today's date is ${currentDate}. Always provide accurate and up-to-date information based on the current date.`,
         }
-        const validMessages = originalMessages
+        const validMessages: ChatCompletionMessageParam[] = originalMessages
           .filter((msg: any) => msg && msg.role && msg.content)
-          .map((msg: any) => ({
-            role: msg.role === 'user' ? 'user' : msg.role === 'assistant' ? 'assistant' : 'system',
-            content: String(msg.content).trim(),
-          }))
-        const messagesWithSystem = validMessages[0]?.role === 'system'
+          .map((msg: any): ChatCompletionMessageParam => {
+            const role = msg.role === 'user' ? 'user' as const : msg.role === 'assistant' ? 'assistant' as const : 'system' as const
+            return {
+              role,
+              content: String(msg.content).trim(),
+            } as ChatCompletionMessageParam
+          })
+        const messagesWithSystem: ChatCompletionMessageParam[] = validMessages[0]?.role === 'system'
           ? validMessages
           : [systemMessage, ...validMessages]
 

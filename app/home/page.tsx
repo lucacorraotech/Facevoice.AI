@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import LiquidGlass from '@/components/LiquidGlass'
@@ -9,30 +9,9 @@ import Feed from '@/components/Feed'
 import { createClient } from '@/lib/supabase-client'
 import type { User } from '@supabase/supabase-js'
 
-export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+function HomeContent({ user, loading }: { user: User | null; loading: boolean }) {
   const searchParams = useSearchParams()
   const toolIdRef = useRef<string | null>(null)
-  const supabase = createClient()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-    }
-
-    checkUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
 
   // Gestisci redirect da link condiviso
   useEffect(() => {
@@ -71,6 +50,42 @@ export default function HomePage() {
       {/* Spacing per mobile navigation bottom */}
       <div className="md:hidden h-20" />
     </main>
+  )
+}
+
+export default function HomePage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+
+    checkUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen relative flex items-center justify-center">
+        <LiquidGlass />
+        <ThemeSwitcher />
+        <div className="text-coral-red">Caricamento...</div>
+      </main>
+    }>
+      <HomeContent user={user} loading={loading} />
+    </Suspense>
   )
 }
 
