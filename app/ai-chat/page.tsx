@@ -48,7 +48,7 @@ export default function AIChatPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [trinacriaImage, setTrinacriaImage] = useState('/team/Trinacria.png')
+  const [trinacriaImage, setTrinacriaImage] = useState('/team/Trinacria.jpg')
   const supabase = createClient()
 
   // Check authentication status
@@ -240,10 +240,8 @@ export default function AIChatPage() {
             priority
             quality={90}
             onError={() => {
-              // Fallback a .jpg se .png non esiste
-              if (trinacriaImage.includes('Trinacria.png')) {
-                setTrinacriaImage('/team/Trinacria.jpg')
-              }
+              // Fallback se l'immagine non carica
+              console.warn('Immagine Trinacria non trovata')
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--background-end)]" />
@@ -278,10 +276,8 @@ export default function AIChatPage() {
           priority
           quality={90}
           onError={() => {
-            // Fallback a .jpg se .png non esiste
-            if (trinacriaImage.includes('Trinacria.png')) {
-              setTrinacriaImage('/team/Trinacria.jpg')
-            }
+            // Fallback se l'immagine non carica
+            console.warn('Immagine Trinacria non trovata')
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--background-end)]" />
